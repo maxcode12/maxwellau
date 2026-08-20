@@ -69,6 +69,17 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  async redirects() {
+    // Canonical host: apex. www permanently redirects (Phase 13 runbook).
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.maxwellau.com" }],
+        destination: "https://maxwellau.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

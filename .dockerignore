@@ -1,0 +1,16 @@
+node_modules
+**/node_modules
+.next
+**/.next
+.git
+test-results
+playwright-report
+coverage
+images
+.tmp
+*.log
+.env
+.env.*
+!.env.example
+infra
+docs

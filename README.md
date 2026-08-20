@@ -11,8 +11,10 @@ Production domain: **maxwellau.com** · Cloud: **Microsoft Azure** · DNS: GoDad
 
 | Path | Purpose |
 | --- | --- |
-| `apps/web` | Next.js (App Router) public website + admin (admin lands in Phase 3) |
-| `packages/*` | Extracted shared packages (created when concrete reuse emerges) |
+| `apps/web` | Next.js (App Router) public website + admin CMS |
+| `apps/worker` | Publishing worker (Storage Queue consumer, social adapters) |
+| `packages/social` | SocialPublisher contract, platform adapters, token crypto |
+| `packages/azure` | Storage Queue adapter |
 | `infra/terraform` | Azure infrastructure as code (Phase 2+) |
 | `docs/adr` | Architecture decision records |
 | `docs/content` | Owner-supplied source content (biography) |
@@ -71,8 +73,17 @@ The biography and discography are real, sourced from the official biography in
   validation failure), navigation, skip link, 404, health endpoint, robots and
   sitemap — `apps/web/e2e/`, run on desktop Chromium and mobile Safari.
 
+## Deployment
+
+See [docs/deployment.md](docs/deployment.md) (containers, CI/CD, first deploy)
+and [docs/dns-cutover.md](docs/dns-cutover.md) (GoDaddy → Azure runbook).
+
 ## Current status
 
-See the status note at the top of [PLAN.md](PLAN.md). In short: Phases 0–1
-(scaffold + full public website) are implemented and verified; Phase 2 (Azure
-data foundation: PostgreSQL, Prisma, Blob Storage, Terraform) is next.
+See the status notes in [PLAN.md](PLAN.md). In short: Phases 0–5 (scaffold,
+public website with the official biography and discography, PostgreSQL/Prisma,
+admin CMS with auth and RBAC, direct-to-Blob media upload, publishing engine
+with worker and adapters) are implemented and verified locally. What remains
+needs external access: Azure subscription (Terraform apply + first deploy),
+Google/Meta/TikTok developer credentials (live social publishing), and the
+GoDaddy DNS cutover once production is verified.

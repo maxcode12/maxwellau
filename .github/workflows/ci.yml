@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Type-check, lint, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Prisma client
+        run: npx --workspace=@maxwellau/web prisma generate
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Production build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SITE_URL: https://maxwellau.com
+
+  e2e:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: maxwellau
+          POSTGRES_PASSWORD: localdev
+          POSTGRES_DB: maxwellau_dev
+        ports: ["5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U maxwellau -d maxwellau_dev"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      azurite:
+        image: mcr.microsoft.com/azure-storage/azurite
+        ports: ["10000:10000", "10001:10001"]
+
+    env:
+      DATABASE_URL: postgresql://maxwellau:localdev@localhost:5433/maxwellau_dev?schema=public
+      AZURE_STORAGE_CONNECTION_STRING: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;"
+      AZURE_STORAGE_CONTAINER_MEDIA: media
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Prisma migrate + seed
+        run: |
+          npx --workspace=@maxwellau/web prisma migrate deploy
+          npm run db:seed --workspace=@maxwellau/web
+
+      - name: Install Playwright browsers
+        run: npx --workspace=@maxwellau/web playwright install --with-deps chromium webkit
+
+      - name: Run E2E
+        run: npm run test:e2e --workspace=@maxwellau/web
+        env:
+          SOCIAL_TOKEN_ENCRYPTION_KEY: ${{ secrets.CI_SOCIAL_TOKEN_KEY || 'lQ7mJb0T5o0F0Y5m8m5S3Y5V9zC1xW2eR4t6y8u0i2k=' }}
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7

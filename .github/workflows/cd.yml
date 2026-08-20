@@ -1,0 +1,108 @@
+name: CD
+
+# Deploys to Azure Container Apps after CI passes on main.
+#
+# BLOCKED — EXTERNAL CREDENTIALS REQUIRED until these repository secrets exist:
+#   AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID  (OIDC federated identity)
+#   ACR_LOGIN_SERVER                                           (e.g. crmaxwellau.azurecr.io)
+# The workflow no-ops with a clear message when they are missing, so enabling
+# deployment is purely a configuration step.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [staging, prod]
+        default: staging
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Build, push, deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    environment: ${{ inputs.environment || 'staging' }}
+
+    steps:
+      - name: Check Azure credentials are configured
+        id: creds
+        env:
+          HAS_AZURE: ${{ secrets.AZURE_CLIENT_ID != '' && secrets.ACR_LOGIN_SERVER != '' }}
+        run: |
+          echo "configured=$HAS_AZURE" >> "$GITHUB_OUTPUT"
+          if [ "$HAS_AZURE" != "true" ]; then
+            echo "::notice::Azure deployment secrets are not configured — skipping deploy."
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.creds.outputs.configured == 'true'
+
+      - name: Azure login (OIDC)
+        if: steps.creds.outputs.configured == 'true'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push images
+        if: steps.creds.outputs.configured == 'true'
+        env:
+          ACR: ${{ secrets.ACR_LOGIN_SERVER }}
+          SHA: ${{ github.sha }}
+        run: |
+          az acr login --name "${ACR%%.*}"
+          docker build -f apps/web/Dockerfile -t "$ACR/maxwellau-web:$SHA" -t "$ACR/maxwellau-web:latest" .
+          docker build -f apps/worker/Dockerfile -t "$ACR/maxwellau-worker:$SHA" -t "$ACR/maxwellau-worker:latest" .
+          docker push --all-tags "$ACR/maxwellau-web"
+          docker push --all-tags "$ACR/maxwellau-worker"
+
+      - name: Run database migrations
+        if: steps.creds.outputs.configured == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          npm ci --ignore-scripts
+          npx --workspace=@maxwellau/web prisma migrate deploy
+
+      - name: Deploy Container App
+        if: steps.creds.outputs.configured == 'true'
+        env:
+          ACR: ${{ secrets.ACR_LOGIN_SERVER }}
+          SHA: ${{ github.sha }}
+          ENVIRONMENT: ${{ inputs.environment || 'staging' }}
+        run: |
+          az containerapp update \
+            --name "ca-maxwellau-web-$ENVIRONMENT" \
+            --resource-group "rg-maxwellau-$ENVIRONMENT" \
+            --image "$ACR/maxwellau-web:$SHA" \
+            --set-env-vars NEXT_PUBLIC_BUILD_SHA="$SHA"
+
+      - name: Verify health endpoint
+        if: steps.creds.outputs.configured == 'true'
+        env:
+          ENVIRONMENT: ${{ inputs.environment || 'staging' }}
+        run: |
+          FQDN=$(az containerapp show \
+            --name "ca-maxwellau-web-$ENVIRONMENT" \
+            --resource-group "rg-maxwellau-$ENVIRONMENT" \
+            --query properties.configuration.ingress.fqdn -o tsv)
+          for i in $(seq 1 20); do
+            if curl -fsS "https://$FQDN/api/health" | grep -q '"status":"ok"'; then
+              echo "Healthy."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Health check failed after deploy." >&2
+          exit 1
