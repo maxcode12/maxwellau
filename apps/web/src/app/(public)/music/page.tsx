@@ -12,7 +12,7 @@ import { Reveal } from "@/components/common/reveal";
 import { PlatformIcon } from "@/components/common/platform-icon";
 import { buttonVariants } from "@/components/ui/button";
 import { buildMetadata } from "@/lib/seo";
-import { configuredLinks } from "@/lib/site-config";
+import { getConfiguredSocialLinks } from "@/modules/settings/service";
 import { cn, formatDuration } from "@/lib/utils";
 import { formatReleaseDate } from "@/modules/music/types";
 import { listAlbums, listFeaturedSongs } from "@/modules/music/service";
@@ -28,7 +28,7 @@ export const metadata: Metadata = buildMetadata({
 
 export default async function MusicPage() {
   const [albums, featured] = await Promise.all([listAlbums(), listFeaturedSongs(6)]);
-  const streaming = configuredLinks("streaming");
+  const streaming = await getConfiguredSocialLinks("streaming");
 
   return (
     <>

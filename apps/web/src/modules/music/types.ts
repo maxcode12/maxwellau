@@ -8,7 +8,7 @@ export type ReleaseType = "ALBUM" | "EP" | "SINGLE";
  * only known to the year; rendering "1 January 2010" for one of those would be
  * an invented fact.
  */
-export type DatePrecision = "day" | "month" | "year";
+export type DatePrecision = "DAY" | "MONTH" | "YEAR";
 
 export type StreamingDestination = {
   readonly platform: SocialPlatform | "youtubeMusic" | "deezer" | "other";
@@ -59,9 +59,9 @@ export function formatReleaseDate(
 ): string {
   const date = new Date(iso);
   const options: Intl.DateTimeFormatOptions =
-    precision === "day"
+    precision === "DAY"
       ? { day: "numeric", month: "long", year: "numeric" }
-      : precision === "month"
+      : precision === "MONTH"
         ? { month: "long", year: "numeric" }
         : { year: "numeric" };
   return new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" }).format(date);
@@ -69,7 +69,7 @@ export function formatReleaseDate(
 
 /** Schema.org datePublished at the correct precision. */
 export function schemaReleaseDate(iso: string, precision: DatePrecision): string {
-  if (precision === "day") return iso.slice(0, 10);
-  if (precision === "month") return iso.slice(0, 7);
+  if (precision === "DAY") return iso.slice(0, 10);
+  if (precision === "MONTH") return iso.slice(0, 7);
   return iso.slice(0, 4);
 }

@@ -153,18 +153,28 @@ reproducibly.
 
 ## Phase 3 --- Admin CMS
 
--   [ ] Admin authentication.
--   [ ] RBAC.
--   [ ] Dashboard shell.
--   [ ] Artist profile/bio editor.
--   [ ] Music/album management.
--   [ ] Video/media management.
--   [ ] Event management.
--   [ ] King's Time management.
--   [ ] Testimony management.
--   [ ] Booking inbox/workflow.
--   [ ] Site settings.
--   [ ] Audit logging.
+> **Status:** IMPLEMENTED and VERIFIED locally. Session auth (opaque token,
+> SHA-256 at rest, sliding expiry), RBAC (ADMIN/EDITOR), dashboard, and CRUD
+> for music/songs, videos, events, King's Time, testimonies (with enforced
+> publication consent), booking workflow (NEW→…→CLOSED with internal notes),
+> newsletter list, site settings (social/streaming links + contact emails) and
+> audit log. Public pages now read CMS content first and fall back to the
+> checked-in content. Verified by 43 Playwright E2E tests incl. login,
+> lockout-safe failures, event creation and booking workflow.
+> Video *media management* beyond YouTube ids arrives with Phase 4 uploads.
+
+-   [x] Admin authentication.
+-   [x] RBAC.
+-   [x] Dashboard shell.
+-   [x] Artist profile/bio editor.
+-   [x] Music/album management.
+-   [x] Video/media management.
+-   [x] Event management.
+-   [x] King's Time management.
+-   [x] Testimony management.
+-   [x] Booking inbox/workflow.
+-   [x] Site settings.
+-   [x] Audit logging.
 
 ### Acceptance
 

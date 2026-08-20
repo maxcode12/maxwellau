@@ -5,7 +5,7 @@ import { BookingForm } from "@/components/sections/booking-form";
 import { Container, Section } from "@/components/common/layout-primitives";
 import { Card } from "@/components/ui/card";
 import { buildMetadata } from "@/lib/seo";
-import { siteConfig } from "@/lib/site-config";
+import { getContactEmails } from "@/modules/settings/service";
 
 export const metadata: Metadata = buildMetadata({
   title: "Book Ministry",
@@ -32,7 +32,8 @@ const expectations = [
   },
 ];
 
-export default function BookingPage() {
+export default async function BookingPage() {
+  const emails = await getContactEmails();
   return (
     <>
       <PageHero
@@ -63,15 +64,15 @@ export default function BookingPage() {
                 </Card>
               ))}
 
-              {siteConfig.email.bookings ? (
+              {emails.bookings ? (
                 <Card className="p-5">
                   <Mail className="size-5 text-gold-400" aria-hidden="true" />
                   <h3 className="mt-3 font-display text-lg leading-snug">Prefer email?</h3>
                   <a
-                    href={`mailto:${siteConfig.email.bookings}`}
+                    href={`mailto:${emails.bookings}`}
                     className="mt-2 inline-block text-sm text-gold-200 underline-offset-4 hover:underline"
                   >
-                    {siteConfig.email.bookings}
+                    {emails.bookings}
                   </a>
                 </Card>
               ) : null}

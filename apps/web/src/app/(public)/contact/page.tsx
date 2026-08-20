@@ -8,7 +8,7 @@ import { NewsletterForm } from "@/components/sections/newsletter-form";
 import { PlatformIcon } from "@/components/common/platform-icon";
 import { buttonVariants } from "@/components/ui/button";
 import { buildMetadata } from "@/lib/seo";
-import { configuredLinks, siteConfig } from "@/lib/site-config";
+import { getConfiguredSocialLinks, getContactEmails } from "@/modules/settings/service";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = buildMetadata({
@@ -18,8 +18,11 @@ export const metadata: Metadata = buildMetadata({
   path: "/contact",
 });
 
-export default function ContactPage() {
-  const socials = configuredLinks("social");
+export default async function ContactPage() {
+  const [socials, emails] = await Promise.all([
+    getConfiguredSocialLinks("social"),
+    getContactEmails(),
+  ]);
 
   return (
     <>
@@ -55,13 +58,13 @@ export default function ContactPage() {
                 Interview requests, event listings and high-resolution photography. Brand assets and
                 the biography are available on the media page.
               </p>
-              {siteConfig.email.press ? (
+              {emails.press ? (
                 <a
-                  href={`mailto:${siteConfig.email.press}`}
+                  href={`mailto:${emails.press}`}
                   className={cn(buttonVariants({ variant: "outline", size: "sm" }), "mt-5 self-start")}
                 >
                   <Mail aria-hidden="true" />
-                  {siteConfig.email.press}
+                  {emails.press}
                 </a>
               ) : (
                 <Link
@@ -80,9 +83,9 @@ export default function ContactPage() {
                 If God has met you through this ministry, the team would be glad to hear it.
                 Testimonies are only ever published with permission.
               </p>
-              {siteConfig.email.general ? (
+              {emails.general ? (
                 <a
-                  href={`mailto:${siteConfig.email.general}?subject=Testimony`}
+                  href={`mailto:${emails.general}?subject=Testimony`}
                   className={cn(buttonVariants({ variant: "outline", size: "sm" }), "mt-5 self-start")}
                 >
                   <Mail aria-hidden="true" />
@@ -99,7 +102,7 @@ export default function ContactPage() {
             </Card>
           </div>
 
-          {!siteConfig.email.general && !siteConfig.email.press ? (
+          {!emails.general && !emails.press ? (
             <p className="mt-8 rounded-lg border border-dashed border-ink-600 bg-ink-900/40 px-5 py-4 text-sm text-muted-warm">
               Direct email addresses have not been published yet. In the meantime, the booking form
               reaches the ministry team for every kind of enquiry.

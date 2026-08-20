@@ -3,10 +3,11 @@ import { BrandMark } from "@/components/layout/brand-mark";
 import { PlatformIcon } from "@/components/common/platform-icon";
 import { NewsletterForm } from "@/components/sections/newsletter-form";
 import { Container } from "@/components/common/layout-primitives";
-import { configuredLinks, primaryNav, secondaryNav, siteConfig } from "@/lib/site-config";
+import { primaryNav, secondaryNav, siteConfig } from "@/lib/site-config";
+import { getConfiguredSocialLinks } from "@/modules/settings/service";
 
-export function SiteFooter() {
-  const socials = configuredLinks("social");
+export async function SiteFooter() {
+  const socials = await getConfiguredSocialLinks("social");
   const year = new Date().getUTCFullYear();
 
   return (

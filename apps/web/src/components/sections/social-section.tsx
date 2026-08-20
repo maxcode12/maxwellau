@@ -1,7 +1,8 @@
 import { PlatformIcon } from "@/components/common/platform-icon";
 import { Container, Section, SectionHeading } from "@/components/common/layout-primitives";
 import { Reveal } from "@/components/common/reveal";
-import { socialLinks, type SocialLink } from "@/lib/site-config";
+import { type SocialLink } from "@/lib/site-config";
+import { getSocialLinks } from "@/modules/settings/service";
 
 function Tile({ link }: { link: SocialLink }) {
   const shared =
@@ -34,9 +35,10 @@ function Tile({ link }: { link: SocialLink }) {
   );
 }
 
-export function SocialSection() {
-  const social = socialLinks.filter((link) => link.kind === "social");
-  const streaming = socialLinks.filter((link) => link.kind === "streaming");
+export async function SocialSection() {
+  const links = await getSocialLinks();
+  const social = links.filter((link) => link.kind === "social");
+  const streaming = links.filter((link) => link.kind === "streaming");
 
   return (
     <Section aria-labelledby="social-heading">
