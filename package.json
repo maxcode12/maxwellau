@@ -1,0 +1,29 @@
+{
+  "name": "maxwellau-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Maxwell AU worship & music ministry platform",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@maxwellau/web",
+    "build": "npm run build --workspace=@maxwellau/web",
+    "start": "npm run start --workspace=@maxwellau/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:e2e": "npm run test:e2e --workspace=@maxwellau/web",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "verify": "npm run typecheck && npm run lint && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "prettier-plugin-tailwindcss": "^0.6.11"
+  },
+  "engines": {
+    "node": ">=20.11.0"
+  }
+}

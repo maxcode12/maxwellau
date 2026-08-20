@@ -1,0 +1,181 @@
+@import "tailwindcss";
+
+/*
+  Maxwell AU brand system.
+  Derived from the crowned-lion logo: gold on near-black, with silver and a
+  deep royal-purple stage light as accents. The site is dark by design — it is
+  a cinematic worship experience, not a light/dark toggleable dashboard.
+*/
+@theme {
+  /* Surfaces */
+  --color-ink-950: #06050a;
+  --color-ink-900: #0b0a08;
+  --color-ink-850: #121016;
+  --color-ink-800: #17141c;
+  --color-ink-700: #221d2a;
+  --color-ink-600: #2f2839;
+
+  /* Gold */
+  --color-gold-100: #fbf1d5;
+  --color-gold-200: #f2d07a;
+  --color-gold-300: #e5bb55;
+  --color-gold-400: #d4a537;
+  --color-gold-500: #b8862a;
+  --color-gold-600: #8a6516;
+  --color-gold-700: #5c440f;
+
+  /* Silver */
+  --color-silver-200: #e8eaee;
+  --color-silver-300: #c8cbd0;
+  --color-silver-400: #9aa0a9;
+
+  /* Royal — the purple/blue of the stage lighting in the photography */
+  --color-royal-400: #7c5cc4;
+  --color-royal-500: #5b3fa8;
+  --color-royal-600: #3f2a7d;
+  --color-royal-700: #2a1c56;
+
+  /* Text */
+  --color-parchment: #f5f1e8;
+  --color-muted-warm: #a79e8c;
+
+  --font-display: var(--font-display), "Cormorant Garamond", "Times New Roman", serif;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  --shadow-glow: 0 0 60px -12px color-mix(in oklab, var(--color-gold-400) 45%, transparent);
+
+  --animate-fade-up: fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-fade-in: fade-in 1.2s ease-out both;
+  --animate-slow-zoom: slow-zoom 24s ease-out forwards;
+  --animate-shimmer: shimmer 6s linear infinite;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 1.75rem, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes slow-zoom {
+    from {
+      transform: scale(1.06);
+    }
+    to {
+      transform: scale(1.16);
+    }
+  }
+  @keyframes shimmer {
+    0% {
+      background-position: -180% 0;
+    }
+    100% {
+      background-position: 180% 0;
+    }
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  * {
+    border-color: var(--color-ink-700);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-ink-950);
+    color: var(--color-parchment);
+    font-family: var(--font-sans);
+    font-feature-settings: "kern", "liga";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  /* A single, consistent, high-contrast focus ring across the whole site. */
+  :focus-visible {
+    outline: 2px solid var(--color-gold-300);
+    outline-offset: 3px;
+    border-radius: var(--radius-xs);
+  }
+
+  ::selection {
+    background-color: var(--color-gold-400);
+    color: var(--color-ink-950);
+  }
+
+  /* Honour the OS setting: no parallax, no drifting, no auto-zoom. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Gold foil text treatment used sparingly on headline accents. */
+  .text-foil {
+    background-image: linear-gradient(
+      100deg,
+      var(--color-gold-600) 0%,
+      var(--color-gold-200) 22%,
+      var(--color-gold-100) 34%,
+      var(--color-gold-300) 50%,
+      var(--color-gold-500) 72%,
+      var(--color-gold-200) 100%
+    );
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: var(--animate-shimmer);
+  }
+
+  .rule-gold {
+    background-image: linear-gradient(
+      to right,
+      transparent,
+      var(--color-gold-400),
+      transparent
+    );
+  }
+}
