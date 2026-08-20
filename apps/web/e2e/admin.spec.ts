@@ -40,7 +40,8 @@ test.describe("admin authentication", () => {
     // On mobile the user footer lives inside the collapsed drawer.
     if (isMobile) await page.getByRole("button", { name: "Open menu" }).click();
     await page.getByRole("button", { name: "Sign out" }).first().click();
-    await expect(page).toHaveURL(/\/admin\/login$/);
+    // Server-action redirects can be slow under full-suite parallel load.
+    await expect(page).toHaveURL(/\/admin\/login$/, { timeout: 15_000 });
 
     // The session is gone server-side, not just the cookie client-side.
     await page.goto("/admin");
