@@ -1,0 +1,5 @@
+# Copy to dev.backend.hcl (gitignored) once the state storage account exists.
+resource_group_name  = "rg-maxwellau-tfstate"
+storage_account_name = "stmaxwellautfstate"
+container_name       = "tfstate"
+key                  = "dev.terraform.tfstate"

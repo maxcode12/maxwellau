@@ -1,8 +1,9 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
+import { db } from "@/lib/db";
 import type { BookingRequest, BookingStatus } from "@/modules/bookings/schema";
 
-export type StoredBooking = BookingRequest & {
+export type StoredBooking = {
   readonly id: string;
   readonly reference: string;
   readonly status: BookingStatus;
@@ -10,40 +11,51 @@ export type StoredBooking = BookingRequest & {
 };
 
 /**
- * Booking persistence.
+ * Persist a public booking request.
  *
- * Phase 1 has no database, so a submission is accepted, given a reference and
- * recorded in the server log. Phase 2/3 replace the body of `createBooking`
- * with a Prisma write plus an admin notification; the call site does not change.
- *
- * Nothing here logs the message body, email address or phone number — booking
- * enquiries are private correspondence and CLAUDE.md forbids logging sensitive
- * form contents.
+ * Only non-sensitive facts (reference, event type/date) are logged — the
+ * message body, email and phone are private correspondence and CLAUDE.md
+ * forbids logging sensitive form contents. Admin notification lands in Phase 3
+ * alongside the booking inbox.
  */
 export async function createBooking(input: BookingRequest): Promise<StoredBooking> {
-  const id = randomUUID();
-  const booking: StoredBooking = {
-    ...input,
-    id,
-    reference: buildReference(id),
-    status: "NEW",
-    receivedAt: new Date().toISOString(),
-  };
+  const reference = buildReference(randomUUID());
+
+  const booking = await db.booking.create({
+    data: {
+      reference,
+      contactName: input.contactName,
+      organisation: input.organisation || null,
+      email: input.email,
+      phone: input.phone || null,
+      eventType: input.eventType,
+      eventDate: new Date(`${input.eventDate}T00:00:00.000Z`),
+      location: input.location,
+      message: input.message,
+      status: "NEW",
+    },
+    select: { id: true, reference: true, status: true, createdAt: true },
+  });
 
   console.info(
     JSON.stringify({
       event: "booking.received",
       reference: booking.reference,
-      eventType: booking.eventType,
-      eventDate: booking.eventDate,
-      receivedAt: booking.receivedAt,
+      eventType: input.eventType,
+      eventDate: input.eventDate,
+      receivedAt: booking.createdAt.toISOString(),
     }),
   );
 
-  return booking;
+  return {
+    id: booking.id,
+    reference: booking.reference,
+    status: booking.status,
+    receivedAt: booking.createdAt.toISOString(),
+  };
 }
 
-/** Short, human-quotable reference derived from the booking id. */
+/** Short, human-quotable reference derived from a UUID. */
 function buildReference(id: string): string {
   return `MAU-${id.replace(/-/g, "").slice(0, 8).toUpperCase()}`;
 }

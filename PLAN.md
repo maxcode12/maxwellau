@@ -107,12 +107,19 @@ request.
 
 ## Phase 2 --- Azure Data Foundation
 
+> **Status:** Schema, migrations, seed and Terraform are IMPLEMENTED and
+> verified against local Docker Postgres (bookings persist end-to-end via E2E).
+> Azure provisioning items (resource group, PostgreSQL server, storage account,
+> Key Vault, App Insights, CORS, lifecycle, Managed Identity) are fully defined
+> in `infra/terraform` and validated — applying them is
+> **BLOCKED — EXTERNAL CREDENTIALS REQUIRED** (Azure subscription login).
+
 -   [ ] Provision resource group(s).
 -   [ ] Provision low-cost PostgreSQL Flexible Server configuration.
--   [ ] Configure Prisma.
--   [ ] Create initial schema.
--   [ ] Create migrations.
--   [ ] Add development seed data.
+-   [x] Configure Prisma.
+-   [x] Create initial schema.
+-   [x] Create migrations.
+-   [x] Add development seed data.
 -   [ ] Provision Azure Storage Account.
 -   [ ] Create media containers.
 -   [ ] Configure CORS narrowly for direct uploads.
@@ -120,23 +127,23 @@ request.
 -   [ ] Provision Key Vault.
 -   [ ] Configure Managed Identity where supported.
 -   [ ] Provision Application Insights.
--   [ ] Define infrastructure in Terraform.
+-   [x] Define infrastructure in Terraform.
 
 ### Initial Models
 
--   [ ] User / Role.
--   [ ] ArtistProfile.
--   [ ] Album / Song.
--   [ ] Media / MediaAsset.
--   [ ] Event.
+-   [x] User / Role.
+-   [x] ArtistProfile.
+-   [x] Album / Song.
+-   [x] Media / MediaAsset.
+-   [x] Event.
 -   [x] Booking.
--   [ ] Testimony.
--   [ ] KingsTimeSession.
--   [ ] SocialAccount.
--   [ ] SocialPost / SocialPublication.
--   [ ] NewsletterSubscriber.
--   [ ] SiteSetting.
--   [ ] AuditLog.
+-   [x] Testimony.
+-   [x] KingsTimeSession.
+-   [x] SocialAccount.
+-   [x] SocialPost / SocialPublication.
+-   [x] NewsletterSubscriber.
+-   [x] SiteSetting.
+-   [x] AuditLog.
 
 ### Acceptance
 

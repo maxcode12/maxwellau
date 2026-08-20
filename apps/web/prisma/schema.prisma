@@ -1,0 +1,562 @@
+// Maxwell AU platform schema.
+//
+// Conventions:
+// - All timestamps are UTC (`@db.Timestamptz(6)`).
+// - Public content carries a unique human-readable `slug`.
+// - Published ministry/media content is soft-deleted via status enums or
+//   `archivedAt`, never hard-deleted.
+// - Money, tokens and secrets never live in this database in plain text;
+//   OAuth tokens are stored encrypted (`encryptedAccessToken`) with the key in
+//   Azure Key Vault.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity & access
+// ---------------------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  EDITOR
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         Role      @default(EDITOR)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime? @db.Timestamptz(6)
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+
+  sessions     Session[]
+  auditEntries AuditLog[]
+  socialPosts  SocialPost[]
+  mediaItems   Media[]
+
+  @@index([role])
+}
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  /// SHA-256 of the opaque cookie token — the raw token is never stored.
+  tokenHash String   @unique
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  /// Coarse user-agent/IP fingerprint for the "active sessions" admin view.
+  client    String?
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// ---------------------------------------------------------------------------
+// Artist profile
+// ---------------------------------------------------------------------------
+
+model ArtistProfile {
+  id        String   @id @default(uuid()) @db.Uuid
+  /// Single-row table in practice; keyed for future multi-artist support.
+  name      String
+  role      String
+  tagline   String
+  summary   String
+  /// Ordered biography sections as validated JSON (heading, paragraphs, image).
+  sections  Json
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+}
+
+// ---------------------------------------------------------------------------
+// Music
+// ---------------------------------------------------------------------------
+
+enum ReleaseType {
+  ALBUM
+  EP
+  SINGLE
+}
+
+enum DatePrecision {
+  DAY
+  MONTH
+  YEAR
+}
+
+enum Visibility {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Album {
+  id                  String        @id @default(uuid()) @db.Uuid
+  slug                String        @unique
+  title               String
+  type                ReleaseType
+  releasedAt          DateTime      @db.Timestamptz(6)
+  releasedAtPrecision DatePrecision @default(DAY)
+  description         String        @default("")
+  coverMediaId        String?       @db.Uuid
+  coverMedia          Media?        @relation(fields: [coverMediaId], references: [id], onDelete: SetNull)
+  tracklistComplete   Boolean       @default(false)
+  /// [{platform,label,url}] validated by Zod at the service boundary.
+  streamingLinks      Json          @default("[]")
+  visibility          Visibility    @default(DRAFT)
+  createdAt           DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime      @updatedAt @db.Timestamptz(6)
+
+  songs Song[]
+
+  @@index([visibility, releasedAt(sort: Desc)])
+}
+
+model Song {
+  id                  String        @id @default(uuid()) @db.Uuid
+  slug                String        @unique
+  title               String
+  albumId             String?       @db.Uuid
+  album               Album?        @relation(fields: [albumId], references: [id], onDelete: SetNull)
+  trackNumber         Int?
+  durationSeconds     Int?
+  releasedAt          DateTime      @db.Timestamptz(6)
+  releasedAtPrecision DatePrecision @default(DAY)
+  featured            Boolean       @default(false)
+  streamingLinks      Json          @default("[]")
+  visibility          Visibility    @default(DRAFT)
+  createdAt           DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime      @updatedAt @db.Timestamptz(6)
+
+  @@index([albumId])
+  @@index([visibility, featured])
+}
+
+// ---------------------------------------------------------------------------
+// Media (metadata only — binaries live in Azure Blob Storage)
+// ---------------------------------------------------------------------------
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+}
+
+enum MediaStatus {
+  /// Upload session issued; blob may not exist yet.
+  PENDING
+  /// Blob upload confirmed server-side.
+  UPLOADED
+  /// Metadata finalised; usable in content.
+  READY
+  /// Soft-deleted.
+  ARCHIVED
+}
+
+model Media {
+  id           String      @id @default(uuid()) @db.Uuid
+  type         MediaType
+  status       MediaStatus @default(PENDING)
+  title        String
+  altText      String      @default("")
+  /// Storage container name (no account/credential data).
+  container    String
+  /// Blob key within the container; unique per container.
+  blobKey      String
+  contentType  String
+  sizeBytes    BigInt?
+  width        Int?
+  height       Int?
+  durationSeconds Int?
+  /// SHA-256 of the uploaded content when the client supplies it.
+  checksum     String?
+  uploadedById String?     @db.Uuid
+  uploadedBy   User?       @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  visibility   Visibility  @default(DRAFT)
+  createdAt    DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime    @updatedAt @db.Timestamptz(6)
+  archivedAt   DateTime?   @db.Timestamptz(6)
+
+  assets       MediaAsset[]
+  albumCovers  Album[]
+  videos       Video[]      @relation("VideoSource")
+  videoPosters Video[]      @relation("VideoPoster")
+  eventImages  Event[]
+  kingsTimeArt KingsTimeSession[]
+  socialPosts  SocialPost[]
+
+  @@unique([container, blobKey])
+  @@index([status])
+  @@index([type, visibility])
+}
+
+/// Derived renditions of a Media item (thumbnails, posters, transcodes).
+model MediaAsset {
+  id          String    @id @default(uuid()) @db.Uuid
+  mediaId     String    @db.Uuid
+  media       Media     @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  /// e.g. "thumbnail", "poster", "web-720p"
+  kind        String
+  container   String
+  blobKey     String
+  contentType String
+  sizeBytes   BigInt?
+  width       Int?
+  height      Int?
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([container, blobKey])
+  @@unique([mediaId, kind])
+}
+
+// ---------------------------------------------------------------------------
+// Videos (website video library)
+// ---------------------------------------------------------------------------
+
+enum VideoCategory {
+  WORSHIP_SESSION
+  MUSIC_VIDEO
+  LIVE
+  KINGS_TIME
+  BEHIND_THE_SCENES
+}
+
+model Video {
+  id              String        @id @default(uuid()) @db.Uuid
+  slug            String        @unique
+  title           String
+  description     String        @default("")
+  category        VideoCategory
+  publishedAt     DateTime      @db.Timestamptz(6)
+  /// YouTube id when hosted on the channel; else sourceMedia points at Blob.
+  youtubeId       String?
+  sourceMediaId   String?       @db.Uuid
+  sourceMedia     Media?        @relation("VideoSource", fields: [sourceMediaId], references: [id], onDelete: SetNull)
+  posterMediaId   String?       @db.Uuid
+  posterMedia     Media?        @relation("VideoPoster", fields: [posterMediaId], references: [id], onDelete: SetNull)
+  durationSeconds Int?
+  featured        Boolean       @default(false)
+  visibility      Visibility    @default(DRAFT)
+  createdAt       DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime      @updatedAt @db.Timestamptz(6)
+
+  kingsTimeSessions KingsTimeSession[]
+
+  @@index([visibility, publishedAt(sort: Desc)])
+  @@index([category])
+}
+
+// ---------------------------------------------------------------------------
+// Events
+// ---------------------------------------------------------------------------
+
+enum EventStatus {
+  SCHEDULED
+  POSTPONED
+  CANCELLED
+}
+
+model Event {
+  id           String      @id @default(uuid()) @db.Uuid
+  slug         String      @unique
+  title        String
+  description  String      @default("")
+  startsAt     DateTime    @db.Timestamptz(6)
+  endsAt       DateTime?   @db.Timestamptz(6)
+  isOnline     Boolean     @default(false)
+  venue        String?
+  addressLine  String?
+  city         String?
+  country      String?
+  /// ISO 3166-1 alpha-2 for structured data.
+  countryCode  String?
+  ticketUrl    String?
+  isFree       Boolean     @default(true)
+  status       EventStatus @default(SCHEDULED)
+  imageMediaId String?     @db.Uuid
+  imageMedia   Media?      @relation(fields: [imageMediaId], references: [id], onDelete: SetNull)
+  visibility   Visibility  @default(DRAFT)
+  createdAt    DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime    @updatedAt @db.Timestamptz(6)
+
+  @@index([visibility, startsAt])
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Bookings
+// ---------------------------------------------------------------------------
+
+enum BookingStatus {
+  NEW
+  REVIEWING
+  CONTACTED
+  CONFIRMED
+  DECLINED
+  CLOSED
+}
+
+enum BookingEventType {
+  WORSHIP_NIGHT
+  CONFERENCE
+  CHURCH_SERVICE
+  CONCERT
+  WEDDING
+  OUTREACH
+  STUDIO_SESSION
+  OTHER
+}
+
+model Booking {
+  id           String           @id @default(uuid()) @db.Uuid
+  /// Human-quotable reference, e.g. MAU-1A2B3C4D.
+  reference    String           @unique
+  contactName  String
+  organisation String?
+  email        String
+  phone        String?
+  eventType    BookingEventType
+  eventDate    DateTime         @db.Date
+  location     String
+  message      String
+  status       BookingStatus    @default(NEW)
+  /// Internal admin notes; never exposed publicly.
+  adminNotes   String           @default("")
+  createdAt    DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime         @updatedAt @db.Timestamptz(6)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([eventDate])
+}
+
+// ---------------------------------------------------------------------------
+// Testimonies
+// ---------------------------------------------------------------------------
+
+enum TestimonyStatus {
+  PENDING
+  APPROVED
+  ARCHIVED
+}
+
+model Testimony {
+  id        String          @id @default(uuid()) @db.Uuid
+  slug      String          @unique
+  name      String
+  location  String?
+  quote     String
+  body      String?
+  sharedAt  DateTime        @db.Timestamptz(6)
+  featured  Boolean         @default(false)
+  status    TestimonyStatus @default(PENDING)
+  /// Record that publication permission was given, and when.
+  consentAt DateTime?       @db.Timestamptz(6)
+  createdAt DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime        @updatedAt @db.Timestamptz(6)
+
+  @@index([status, sharedAt(sort: Desc)])
+}
+
+// ---------------------------------------------------------------------------
+// King's Time
+// ---------------------------------------------------------------------------
+
+enum KingsTimeStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+  ARCHIVED
+}
+
+model KingsTimeSession {
+  id                 String          @id @default(uuid()) @db.Uuid
+  slug               String          @unique
+  title              String
+  theme              String
+  description        String          @default("")
+  startsAt           DateTime        @db.Timestamptz(6)
+  endsAt             DateTime?       @db.Timestamptz(6)
+  scriptureReference String?
+  scriptureText      String?
+  artworkMediaId     String?         @db.Uuid
+  artworkMedia       Media?          @relation(fields: [artworkMediaId], references: [id], onDelete: SetNull)
+  livestreamUrl      String?
+  replayUrl          String?
+  status             KingsTimeStatus @default(SCHEDULED)
+  visibility         Visibility      @default(DRAFT)
+  createdAt          DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime        @updatedAt @db.Timestamptz(6)
+
+  relatedVideos Video[]
+
+  @@index([visibility, startsAt(sort: Desc)])
+}
+
+// ---------------------------------------------------------------------------
+// Social publishing
+// ---------------------------------------------------------------------------
+
+enum SocialPlatform {
+  YOUTUBE
+  FACEBOOK
+  INSTAGRAM
+  TIKTOK
+}
+
+enum SocialAccountStatus {
+  CONNECTED
+  EXPIRED
+  REVOKED
+  DISCONNECTED
+}
+
+model SocialAccount {
+  id                    String              @id @default(uuid()) @db.Uuid
+  platform              SocialPlatform
+  /// Platform-side account/channel/page id.
+  externalId            String
+  displayName           String
+  status                SocialAccountStatus @default(CONNECTED)
+  /// AES-256-GCM ciphertext; key lives in Key Vault. Never returned by APIs.
+  encryptedAccessToken  String?
+  encryptedRefreshToken String?
+  accessTokenExpiresAt  DateTime?           @db.Timestamptz(6)
+  /// Granted OAuth scopes for capability detection.
+  scopes                String[]            @default([])
+  /// Platform-specific capability flags discovered at connect time.
+  capabilities          Json                @default("{}")
+  connectedAt           DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime            @updatedAt @db.Timestamptz(6)
+
+  publications SocialPublication[]
+
+  @@unique([platform, externalId])
+  @@index([status])
+}
+
+enum SocialPostStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHING
+  COMPLETED
+  /// At least one destination failed while others may have succeeded.
+  COMPLETED_WITH_FAILURES
+  CANCELLED
+}
+
+model SocialPost {
+  id           String           @id @default(uuid()) @db.Uuid
+  title        String
+  description  String           @default("")
+  mediaId      String?          @db.Uuid
+  media        Media?           @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+  /// Also publish on the website (creates/updates a Video record).
+  publishToWebsite Boolean      @default(true)
+  status       SocialPostStatus @default(DRAFT)
+  scheduledFor DateTime?        @db.Timestamptz(6)
+  createdById  String?          @db.Uuid
+  createdBy    User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt    DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime         @updatedAt @db.Timestamptz(6)
+
+  publications SocialPublication[]
+
+  @@index([status, scheduledFor])
+}
+
+enum PublicationStatus {
+  DRAFT
+  QUEUED
+  PROCESSING
+  PUBLISHED
+  FAILED
+}
+
+/// One destination of one post. Each destination succeeds or fails
+/// independently; a failure never rolls back a sibling.
+model SocialPublication {
+  id              String            @id @default(uuid()) @db.Uuid
+  postId          String            @db.Uuid
+  post            SocialPost        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  accountId       String            @db.Uuid
+  account         SocialAccount     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  status          PublicationStatus @default(DRAFT)
+  /// Idempotency key: publication id + attempt — workers de-duplicate on it.
+  attempt         Int               @default(0)
+  /// Platform-specific caption override; falls back to the post description.
+  captionOverride String?
+  /// Platform-side id/URL once published.
+  externalId      String?
+  externalUrl     String?
+  /// Sanitised, actionable error detail — never a raw provider payload.
+  lastError       String?
+  queuedAt        DateTime?         @db.Timestamptz(6)
+  publishedAt     DateTime?         @db.Timestamptz(6)
+  createdAt       DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime          @updatedAt @db.Timestamptz(6)
+
+  @@unique([postId, accountId])
+  @@index([status])
+  @@index([accountId, status])
+}
+
+// ---------------------------------------------------------------------------
+// Newsletter
+// ---------------------------------------------------------------------------
+
+enum SubscriberStatus {
+  PENDING_CONFIRMATION
+  SUBSCRIBED
+  UNSUBSCRIBED
+}
+
+model NewsletterSubscriber {
+  id             String           @id @default(uuid()) @db.Uuid
+  email          String           @unique
+  status         SubscriberStatus @default(PENDING_CONFIRMATION)
+  consentAt      DateTime         @db.Timestamptz(6)
+  confirmedAt    DateTime?        @db.Timestamptz(6)
+  unsubscribedAt DateTime?        @db.Timestamptz(6)
+  createdAt      DateTime         @default(now()) @db.Timestamptz(6)
+
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Settings & audit
+// ---------------------------------------------------------------------------
+
+model SiteSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @db.Uuid
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  /// e.g. "booking.status_changed", "media.archived", "social.account_connected"
+  action     String
+  /// Entity type + id the action touched.
+  entityType String
+  entityId   String
+  /// Sanitised diff/context — never tokens, passwords or full form contents.
+  detail     Json     @default("{}")
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt(sort: Desc)])
+}
