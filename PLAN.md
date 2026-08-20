@@ -304,13 +304,13 @@ capabilities that require user interaction or are unavailable.
 ## Phase 9 --- Scheduling & Editorial Workflow
 
 -   [ ] Draft posts.
--   [ ] Scheduled posts.
+-   [x] Scheduled posts.
 -   [ ] Calendar/list view.
 -   [ ] Caption variants per platform.
 -   [ ] Platform-specific media selection.
 -   [ ] Preview.
 -   [ ] Approval state if additional editors are added.
--   [ ] Retry dashboard.
+-   [x] Retry dashboard.
 -   [ ] Publishing notifications.
 
 ## Phase 10 --- Analytics
@@ -353,22 +353,35 @@ contracts.
 
 ## Phase 12 --- Production Deployment
 
--   [ ] Containerize Next.js.
+> **Status:** Containerisation (web image built and smoke-tested locally with
+> live database connectivity; worker image defined), CI (full verify + E2E
+> against service containers), CD (OIDC → ACR → Container Apps with migration
+> step and post-deploy health verification) and runbooks are IMPLEMENTED.
+> Provisioning/deploying to real Azure environments is **BLOCKED — EXTERNAL
+> CREDENTIALS REQUIRED** (Azure subscription + CD repository secrets).
+
+-   [x] Containerize Next.js.
 -   [ ] Provision Azure Container Apps environment/app.
 -   [ ] Configure Managed Identity.
 -   [ ] Configure Key Vault references.
 -   [ ] Configure PostgreSQL production database.
 -   [ ] Configure Blob production containers.
 -   [ ] Configure logging/alerts.
--   [ ] GitHub Actions CI.
--   [ ] GitHub Actions CD.
--   [ ] Database migration deployment strategy.
+-   [x] GitHub Actions CI.
+-   [x] GitHub Actions CD.
+-   [x] Database migration deployment strategy.
 -   [ ] Staging environment.
 -   [ ] Production environment.
--   [ ] Health checks.
+-   [x] Health checks.
 -   [ ] Backup/restore plan.
 
 ## Phase 13 --- maxwellau.com / GoDaddy DNS Cutover
+
+> **Status:** Full step-by-step runbook in docs/dns-cutover.md (inventory,
+> MX/TXT preservation, verification records, apex+www, canonical redirect,
+> TLS and email validation). Execution is **BLOCKED** until the Azure
+> production endpoint exists and is verified. The www→apex redirect is
+> already implemented in the application.
 
 Do not change DNS until the Azure production endpoint has been tested.
 
@@ -395,9 +408,9 @@ functionality is unaffected.
 ## Phase 14 --- Hardening
 
 -   [ ] Dependency/security scanning.
--   [ ] Rate limiting.
--   [ ] Anti-spam for public forms.
--   [ ] Security headers/CSP.
+-   [x] Rate limiting.
+-   [x] Anti-spam for public forms.
+-   [x] Security headers/CSP.
 -   [ ] RBAC review.
 -   [ ] Azure least-privilege review.
 -   [ ] Secret rotation procedure.
