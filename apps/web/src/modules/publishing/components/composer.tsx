@@ -30,6 +30,7 @@ export function Composer({
   const [mediaId, setMediaId] = React.useState("");
   const [publishToWebsite, setPublishToWebsite] = React.useState(true);
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
+  const [overrides, setOverrides] = React.useState<Record<string, string>>({});
   const [mode, setMode] = React.useState<"now" | "schedule">("now");
   const [scheduledFor, setScheduledFor] = React.useState("");
   const [result, setResult] = React.useState<ActionResult>({ status: "idle" });
@@ -52,6 +53,9 @@ export function Composer({
         mediaId,
         publishToWebsite,
         accountIds: [...selected],
+        captionOverrides: Object.fromEntries(
+          Object.entries(overrides).filter(([id, value]) => selected.has(id) && value.trim()),
+        ),
         mode,
         scheduledFor: scheduledFor ? `${scheduledFor}:00.000Z` : "",
       });
@@ -89,7 +93,7 @@ export function Composer({
       <Field
         label="Description"
         htmlFor="composer-description"
-        hint="Used as the caption on every platform. Platform-specific overrides can be added after publishing lands."
+        hint="Used as the caption everywhere unless a destination has its own override below."
       >
         {(aria) => (
           <Textarea
@@ -131,12 +135,24 @@ export function Composer({
                 onChange={() => toggleAccount(account.id)}
                 className="mt-0.5 size-4 rounded-xs border border-ink-600 bg-ink-900 accent-gold-400"
               />
-              <span>
+              <span className="min-w-0 flex-1">
                 <span className="block text-sm text-parchment">
                   {account.platform} — {account.displayName}
                 </span>
                 {account.limitation ? (
                   <span className="block text-xs text-amber-300">{account.limitation}</span>
+                ) : null}
+                {selected.has(account.id) ? (
+                  <textarea
+                    aria-label={`Caption override for ${account.platform}`}
+                    placeholder="Optional caption override for this platform…"
+                    value={overrides[account.id] ?? ""}
+                    onChange={(event) =>
+                      setOverrides((current) => ({ ...current, [account.id]: event.target.value }))
+                    }
+                    rows={2}
+                    className="mt-2 w-full rounded-md border border-ink-600 bg-ink-900/80 px-3 py-2 text-xs text-parchment placeholder:text-muted-warm/60 focus:border-gold-400 focus:outline-none"
+                  />
                 ) : null}
               </span>
             </label>

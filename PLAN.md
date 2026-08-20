@@ -306,7 +306,7 @@ capabilities that require user interaction or are unavailable.
 -   [ ] Draft posts.
 -   [x] Scheduled posts.
 -   [ ] Calendar/list view.
--   [ ] Caption variants per platform.
+-   [x] Caption variants per platform.
 -   [ ] Platform-specific media selection.
 -   [ ] Preview.
 -   [ ] Approval state if additional editors are added.

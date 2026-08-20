@@ -17,6 +17,8 @@ const composerSchema = z
     mediaId: z.string().uuid().optional().or(z.literal("")),
     publishToWebsite: z.boolean(),
     accountIds: z.array(z.string().uuid()).max(10),
+    /** Optional per-destination caption override, keyed by account id. */
+    captionOverrides: z.record(z.string().uuid(), z.string().trim().max(5000)).default({}),
     mode: z.enum(["now", "schedule"]),
     scheduledFor: z.string().optional().or(z.literal("")),
   })
@@ -90,6 +92,7 @@ export async function createPostAction(input: unknown): Promise<ActionResult> {
         create: accounts.map((account) => ({
           accountId: account.id,
           status: "DRAFT",
+          captionOverride: data.captionOverrides[account.id]?.trim() || null,
         })),
       },
     },
