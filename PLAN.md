@@ -183,16 +183,23 @@ changing source code.
 
 ## Phase 4 --- Direct Media Upload
 
--   [ ] Create upload-session endpoint.
--   [ ] Generate exact-scope, short-lived SAS.
--   [ ] Implement direct browser-to-Blob upload.
--   [ ] Upload progress UI.
--   [ ] Cancellation/retry.
--   [ ] Server-side upload confirmation.
--   [ ] Persist Media metadata.
+> **Status:** IMPLEMENTED and VERIFIED against the local Azurite emulator —
+> E2E covers a full direct browser→Blob block upload with server confirmation
+> and READY status, plus rejection of unsupported file types. In Azure the
+> adapter switches to Managed Identity + user-delegation SAS automatically.
+> Thumbnail/poster generation is deferred to the worker (Phase 5+), as the
+> MediaAsset model and admin UI hooks already anticipate it.
+
+-   [x] Create upload-session endpoint.
+-   [x] Generate exact-scope, short-lived SAS.
+-   [x] Implement direct browser-to-Blob upload.
+-   [x] Upload progress UI.
+-   [x] Cancellation/retry.
+-   [x] Server-side upload confirmation.
+-   [x] Persist Media metadata.
 -   [ ] Thumbnail/poster support.
--   [ ] Media visibility and publication status.
--   [ ] Secure/private container strategy where needed.
+-   [x] Media visibility and publication status.
+-   [x] Secure/private container strategy where needed.
 
 ### Acceptance
 

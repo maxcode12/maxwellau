@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CalendarDays,
+  Image as ImageIcon,
   Crown,
   Disc3,
   FileClock,
@@ -42,6 +43,7 @@ const navGroups: { heading: string; items: NavItem[] }[] = [
     items: [
       { href: "/admin/music", label: "Music", icon: Disc3 },
       { href: "/admin/videos", label: "Videos", icon: Film },
+      { href: "/admin/media", label: "Media Library", icon: ImageIcon },
       { href: "/admin/kings-time", label: "King's Time", icon: Crown },
       { href: "/admin/events", label: "Events", icon: CalendarDays },
       { href: "/admin/testimonies", label: "Testimonies", icon: Quote },

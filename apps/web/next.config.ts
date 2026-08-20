@@ -22,7 +22,10 @@ const csp = [
   "img-src 'self' data: blob: https://i.ytimg.com",
   "media-src 'self' blob:",
   "frame-src https://www.youtube-nocookie.com https://www.youtube.com",
-  "connect-src 'self'" + (isDev ? " ws: wss:" : ""),
+  // Direct browser-to-Blob uploads (SAS PUTs). Azurite locally, the storage
+  // account in Azure.
+  "connect-src 'self' https://*.blob.core.windows.net" +
+    (isDev || process.env.E2E === "1" ? " ws: wss: http://127.0.0.1:10000 http://localhost:10000" : ""),
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
