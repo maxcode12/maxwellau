@@ -57,6 +57,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  transpilePackages: ["@maxwellau/social", "@maxwellau/azure"],
   poweredByHeader: false,
   // Produces a minimal server bundle for the Azure Container Apps image.
   output: "standalone",

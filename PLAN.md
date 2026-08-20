@@ -208,19 +208,28 @@ process, and the website can display the resulting approved media.
 
 ## Phase 5 --- Publishing Engine
 
--   [ ] Define `SocialPublisher` contract.
--   [ ] Define platform capability model.
--   [ ] Add SocialPost composer.
--   [ ] Select destinations.
--   [ ] Publish now.
--   [ ] Schedule publication.
+> **Status:** IMPLEMENTED and VERIFIED locally. SocialPublisher contract with
+> explicit capability model (packages/social), Storage Queue adapter
+> (packages/azure), idempotent jobs (publicationId+attempt gate), publishing
+> worker (apps/worker) with scheduled-post promotion, per-destination status,
+> retry, sanitised errors, composer and history UI. Worker smoke-tested
+> against Azurite+Postgres; website-only publish verified by E2E.
+> "Provision Azure Storage Queue" is defined in Terraform (Phase 2) —
+> applying is blocked on Azure credentials.
+
+-   [x] Define `SocialPublisher` contract.
+-   [x] Define platform capability model.
+-   [x] Add SocialPost composer.
+-   [x] Select destinations.
+-   [x] Publish now.
+-   [x] Schedule publication.
 -   [ ] Provision Azure Storage Queue.
--   [ ] Add worker/Function.
--   [ ] Implement idempotent jobs.
--   [ ] Publication status tracking.
--   [ ] Retry failed destination.
--   [ ] Sanitize/log external errors.
--   [ ] Admin publishing history.
+-   [x] Add worker/Function.
+-   [x] Implement idempotent jobs.
+-   [x] Publication status tracking.
+-   [x] Retry failed destination.
+-   [x] Sanitize/log external errors.
+-   [x] Admin publishing history.
 
 ### Acceptance
 
@@ -229,15 +238,20 @@ destination reports its own QUEUED/PROCESSING/PUBLISHED/FAILED state.
 
 ## Phase 6 --- YouTube Integration
 
+> **Status:** Adapter (resumable upload, processing polls, token refresh),
+> Google OAuth connect flow and encrypted token storage are IMPLEMENTED.
+> Live testing is **BLOCKED — EXTERNAL CREDENTIALS REQUIRED** (Google Cloud
+> project + OAuth client + YouTube API audit for public uploads).
+
 -   [ ] Create/configure Google/YouTube API application.
--   [ ] Implement OAuth.
--   [ ] Protect token storage.
--   [ ] Validate YouTube upload requirements.
--   [ ] Implement video publisher.
--   [ ] Save returned video ID/URL.
--   [ ] Handle processing/failure states.
--   [ ] Add disconnect/reconnect workflow.
--   [ ] Document any API verification/audit requirements.
+-   [x] Implement OAuth.
+-   [x] Protect token storage.
+-   [x] Validate YouTube upload requirements.
+-   [x] Implement video publisher.
+-   [x] Save returned video ID/URL.
+-   [x] Handle processing/failure states.
+-   [x] Add disconnect/reconnect workflow.
+-   [x] Document any API verification/audit requirements.
 
 ### Acceptance
 
@@ -246,15 +260,20 @@ to the connected YouTube channel through the admin publishing workflow.
 
 ## Phase 7 --- Meta: Facebook & Instagram
 
+> **Status:** Page/IG adapters (file_url + container/publish flows), Meta OAuth
+> with Page enumeration and linked-IG discovery are IMPLEMENTED. Live testing
+> is **BLOCKED — EXTERNAL CREDENTIALS REQUIRED** (Meta developer app + app
+> review for pages_manage_posts / instagram_content_publish).
+
 -   [ ] Confirm account/page prerequisites and current API capabilities.
 -   [ ] Configure Meta developer application.
--   [ ] Implement OAuth/token lifecycle.
--   [ ] Facebook publisher.
--   [ ] Instagram publisher.
--   [ ] Platform-specific validation.
--   [ ] Result/status handling.
--   [ ] Retry behavior.
--   [ ] Document app review/permission requirements.
+-   [x] Implement OAuth/token lifecycle.
+-   [x] Facebook publisher.
+-   [x] Instagram publisher.
+-   [x] Platform-specific validation.
+-   [x] Result/status handling.
+-   [x] Retry behavior.
+-   [x] Document app review/permission requirements.
 
 ### Acceptance
 
@@ -263,13 +282,18 @@ eligible content without manual re-upload from the website.
 
 ## Phase 8 --- TikTok
 
+> **Status:** Content Posting API adapter (PULL_FROM_URL, status polls, token
+> refresh) and OAuth flow are IMPLEMENTED. Live testing is **BLOCKED —
+> EXTERNAL CREDENTIALS REQUIRED** (TikTok developer app, Content Posting API
+> approval, verified media domain).
+
 -   [ ] Confirm current Content Posting API eligibility/capabilities.
 -   [ ] Configure developer application.
--   [ ] Implement OAuth/token lifecycle.
--   [ ] Implement supported publishing flow.
--   [ ] Validate video constraints.
--   [ ] Result/status handling.
--   [ ] Document review/approval requirements.
+-   [x] Implement OAuth/token lifecycle.
+-   [x] Implement supported publishing flow.
+-   [x] Validate video constraints.
+-   [x] Result/status handling.
+-   [x] Document review/approval requirements.
 
 ### Acceptance
 

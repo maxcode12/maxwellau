@@ -17,7 +17,9 @@ import {
   Mail,
   Menu,
   Quote,
+  Send,
   Settings,
+  Share2,
   UserRound,
   X,
 } from "lucide-react";
@@ -48,6 +50,13 @@ const navGroups: { heading: string; items: NavItem[] }[] = [
       { href: "/admin/events", label: "Events", icon: CalendarDays },
       { href: "/admin/testimonies", label: "Testimonies", icon: Quote },
       { href: "/admin/profile", label: "Artist Profile", icon: UserRound },
+    ],
+  },
+  {
+    heading: "Publishing",
+    items: [
+      { href: "/admin/publishing", label: "Publishing", icon: Send },
+      { href: "/admin/social-accounts", label: "Social Accounts", icon: Share2, adminOnly: true },
     ],
   },
   {
