@@ -68,3 +68,9 @@ variable "site_url" {
   description = "Canonical public origin for this environment (e.g. https://maxwellau.com)."
   type        = string
 }
+
+variable "enable_acr_pull" {
+  description = "Set true on a follow-up apply once the Container App and its acr_pull role assignment already exist — see docs/deployment.md for why this can't be true on the first apply."
+  type        = bool
+  default     = false
+}

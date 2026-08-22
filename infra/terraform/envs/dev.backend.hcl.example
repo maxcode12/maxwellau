@@ -1,4 +1,15 @@
-# Copy to dev.backend.hcl (gitignored) once the state storage account exists.
+# Copy to <env>.backend.hcl (gitignored) once the state storage account
+# exists, and set ARM_ACCESS_KEY before every init/plan/apply:
+#   export ARM_ACCESS_KEY=$(az storage account keys list \
+#     --account-name <storage_account_name> -g rg-maxwellau-tfstate \
+#     --query "[0].value" -o tsv)
+#
+# Key-based auth is used deliberately over `use_azuread_auth = true`: it
+# needs no extra role assignment on the state storage account, and granting
+# one hit a broken `az role assignment create` (returns MissingSubscription
+# regardless of flags — a direct `az rest PUT` works fine; see
+# docs/deployment.md). If your tenant doesn't have that problem, AzureAD auth
+# is the more standard choice.
 resource_group_name  = "rg-maxwellau-tfstate"
 storage_account_name = "stmaxwellautfstate"
 container_name       = "tfstate"

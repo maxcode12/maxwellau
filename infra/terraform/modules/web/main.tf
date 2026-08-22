@@ -16,6 +16,12 @@ variable "database_url_secret_name" { type = string }
 variable "storage_account_name" { type = string }
 variable "storage_account_id" { type = string }
 variable "site_url" { type = string }
+variable "acr_id" { type = string }
+variable "acr_login_server" { type = string }
+variable "enable_acr_pull" {
+  type    = bool
+  default = false
+}
 
 resource "azurerm_container_app_environment" "main" {
   name                       = "cae-${var.project}-${var.environment}"
@@ -23,6 +29,13 @@ resource "azurerm_container_app_environment" "main" {
   resource_group_name        = var.resource_group_name
   log_analytics_workspace_id = var.log_analytics_workspace_id
   tags                       = var.tags
+
+  lifecycle {
+    # ARM implicitly returns a "Consumption" workload_profile on a
+    # Consumption-only environment even though none was ever configured —
+    # a permanent, harmless phantom diff otherwise.
+    ignore_changes = [workload_profile]
+  }
 }
 
 resource "azurerm_container_app" "web" {
@@ -34,6 +47,23 @@ resource "azurerm_container_app" "web" {
 
   identity {
     type = "SystemAssigned"
+  }
+
+  # Gated behind a variable rather than always present: Container Apps
+  # validates the registry credential AT REVISION CREATION TIME, but this
+  # app's own SystemAssigned identity does not exist until the app itself is
+  # created — configuring ACR pull on the SAME apply that creates the app is
+  # a genuine chicken-and-egg that times the revision out after ~20 minutes.
+  # First apply for a new environment: leave enable_acr_pull=false (the
+  # default). Once that succeeds and the acr_pull role assignment below has
+  # had a minute to propagate, re-apply with enable_acr_pull=true — see
+  # docs/deployment.md.
+  dynamic "registry" {
+    for_each = var.enable_acr_pull ? [1] : []
+    content {
+      server   = var.acr_login_server
+      identity = "System"
+    }
   }
 
   ingress {
@@ -110,8 +140,12 @@ resource "azurerm_container_app" "web" {
   }
 
   lifecycle {
-    # CD updates the image; Terraform must not fight it.
-    ignore_changes = [template[0].container[0].image]
+    ignore_changes = [
+      # CD updates the image; Terraform must not fight it.
+      template[0].container[0].image,
+      # Same phantom "Consumption" default as the environment above.
+      workload_profile_name,
+    ]
   }
 }
 
@@ -143,6 +177,14 @@ resource "azurerm_role_assignment" "blob_delegator" {
 resource "azurerm_role_assignment" "queue_contributor" {
   scope                = var.storage_account_id
   role_definition_name = "Storage Queue Data Contributor"
+  principal_id         = azurerm_container_app.web.identity[0].principal_id
+}
+
+# Lets the Container App pull its own image from ACR via Managed Identity —
+# no registry password anywhere in the app configuration.
+resource "azurerm_role_assignment" "acr_pull" {
+  scope                = var.acr_id
+  role_definition_name = "AcrPull"
   principal_id         = azurerm_container_app.web.identity[0].principal_id
 }
 

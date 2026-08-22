@@ -20,6 +20,10 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.6"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.11"
+    }
   }
 
   # Remote state in an Azure Storage account, configured per environment:
@@ -75,6 +79,10 @@ module "data" {
   postgres_admin_login     = var.postgres_admin_login
   allowed_client_ip_ranges = var.allowed_client_ip_ranges
   web_cors_origins         = var.web_cors_origins
+
+  # Needs the deployer's Key Vault RBAC (granted inside module.core) to have
+  # propagated before it can write the database-url secret.
+  depends_on = [module.core]
 }
 
 module "web" {
@@ -96,4 +104,7 @@ module "web" {
   storage_account_name         = module.data.storage_account_name
   storage_account_id           = module.data.storage_account_id
   site_url                     = var.site_url
+  acr_id                       = module.core.acr_id
+  acr_login_server             = module.core.acr_login_server
+  enable_acr_pull              = var.enable_acr_pull
 }

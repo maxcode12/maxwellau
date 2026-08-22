@@ -10,3 +10,8 @@ output "web_fqdn" {
 output "storage_account_name" {
   value = module.data.storage_account_name
 }
+
+output "acr_login_server" {
+  description = "docker build/push target for this environment's image."
+  value       = module.core.acr_login_server
+}
