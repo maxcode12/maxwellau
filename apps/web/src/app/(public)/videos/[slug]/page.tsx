@@ -36,13 +36,14 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   }
 
   const poster = video.posterImageSlug ? getImage(video.posterImageSlug) : undefined;
+  const imageUrl = video.posterUrl ?? poster?.src;
   return buildMetadata({
     title: video.title,
     description: video.description,
     path: `/videos/${video.slug}`,
     type: "video.other",
     publishedTime: video.publishedAt,
-    ...(poster ? { image: poster.src } : {}),
+    ...(imageUrl ? { image: imageUrl } : {}),
   });
 }
 
@@ -52,6 +53,7 @@ export default async function VideoPage({ params }: Params) {
   if (!video) notFound();
 
   const poster = video.posterImageSlug ? getImage(video.posterImageSlug) : undefined;
+  const posterUrl = video.posterUrl ?? poster?.src ?? null;
   const related = (await listVideos(video.category))
     .filter((candidate) => candidate.slug !== video.slug)
     .slice(0, 3);
@@ -63,7 +65,9 @@ export default async function VideoPage({ params }: Params) {
     description: video.description,
     uploadDate: video.publishedAt,
     url: absoluteUrl(`/videos/${video.slug}`),
-    ...(poster ? { thumbnailUrl: absoluteUrl(poster.src) } : {}),
+    ...(posterUrl
+      ? { thumbnailUrl: posterUrl.startsWith("http") ? posterUrl : absoluteUrl(posterUrl) }
+      : {}),
     ...(video.durationSeconds
       ? {
           duration: `PT${Math.floor(video.durationSeconds / 60)}M${video.durationSeconds % 60}S`,
@@ -86,7 +90,12 @@ export default async function VideoPage({ params }: Params) {
             All videos
           </Link>
 
-          <VideoPlayer youtubeId={video.youtubeId} title={video.title} poster={poster} />
+          <VideoPlayer
+            youtubeId={video.youtubeId}
+            title={video.title}
+            posterUrl={video.posterUrl}
+            poster={poster}
+          />
 
           <div className="mt-10 max-w-3xl">
             <div className="flex flex-wrap items-center gap-2">

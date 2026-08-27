@@ -15,10 +15,13 @@ import type { ImageAsset } from "@/lib/images";
 export function VideoPlayer({
   youtubeId,
   title,
+  posterUrl,
   poster,
 }: {
   youtubeId: string | null;
   title: string;
+  /** External poster (e.g. YouTube's own thumbnail CDN). Takes precedence over `poster`. */
+  posterUrl?: string | null;
   poster?: ImageAsset | undefined;
 }) {
   const [active, setActive] = React.useState(false);
@@ -37,7 +40,16 @@ export function VideoPlayer({
     );
   }
 
-  const posterNode = poster ? (
+  const posterNode = posterUrl ? (
+    <Image
+      src={posterUrl}
+      alt=""
+      fill
+      priority
+      sizes="(min-width: 1024px) 60rem, 100vw"
+      className="object-cover"
+    />
+  ) : poster ? (
     <Image
       src={poster.src}
       alt=""

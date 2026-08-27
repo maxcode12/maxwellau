@@ -30,6 +30,13 @@ export type Video = Sampled & {
   readonly youtubeId: string | null;
   /** Slug into the generated image manifest, used as the poster frame. */
   readonly posterImageSlug: string | null;
+  /**
+   * External poster URL (e.g. YouTube's own thumbnail CDN) — used when a video
+   * has no locally-managed poster image. Takes precedence over
+   * `posterImageSlug` when both are set. `i.ytimg.com` is allow-listed in
+   * next.config.ts image remotePatterns and CSP img-src.
+   */
+  readonly posterUrl: string | null;
   readonly durationSeconds: number | null;
   readonly featured: boolean;
 };

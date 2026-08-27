@@ -8,7 +8,13 @@ import { videoCategoryLabels, type Video } from "@/modules/videos/types";
 import { cn } from "@/lib/utils";
 
 export function VideoCard({ video, featured = false }: { video: Video; featured?: boolean }) {
-  const poster = video.posterImageSlug ? getImage(video.posterImageSlug) : undefined;
+  // External poster (e.g. YouTube's own thumbnail CDN) takes precedence over a
+  // locally-managed image; either may be absent, in which case a plain icon
+  // placeholder is shown instead.
+  const managedPoster = video.posterImageSlug ? getImage(video.posterImageSlug) : undefined;
+  const sizes = featured
+    ? "(min-width: 1024px) 66vw, 95vw"
+    : "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 95vw";
 
   return (
     <article className={cn("group", featured && "lg:col-span-2")}>
@@ -17,18 +23,22 @@ export function VideoCard({ video, featured = false }: { video: Video; featured?
         className="block overflow-hidden rounded-lg border border-ink-700/70 bg-ink-900"
       >
         <div className={cn("relative overflow-hidden", featured ? "aspect-[16/9]" : "aspect-video")}>
-          {poster ? (
+          {video.posterUrl ? (
             <Image
-              src={poster.src}
+              src={video.posterUrl}
               alt=""
               fill
-              sizes={
-                featured
-                  ? "(min-width: 1024px) 66vw, 95vw"
-                  : "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 95vw"
-              }
+              sizes={sizes}
+              className="object-cover transition-transform duration-700 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+            />
+          ) : managedPoster ? (
+            <Image
+              src={managedPoster.src}
+              alt=""
+              fill
+              sizes={sizes}
               placeholder="blur"
-              blurDataURL={poster.blurDataURL}
+              blurDataURL={managedPoster.blurDataURL}
               className="object-cover transition-transform duration-700 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
             />
           ) : (

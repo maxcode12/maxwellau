@@ -19,10 +19,19 @@ function SpotifyIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+function XIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
+      <path d="M18.9 2H22l-7.6 8.7L23.3 22h-7l-5.5-7.2L4.5 22H1.4l8.1-9.3L1 2h7.2l5 6.6L18.9 2Zm-1.2 18h1.7L6.4 3.9H4.6L17.7 20Z" />
+    </svg>
+  );
+}
+
 const icons: Record<SocialPlatform, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
   youtube: Youtube,
   instagram: Instagram,
   facebook: Facebook,
+  twitter: XIcon,
   tiktok: TikTokIcon,
   spotify: SpotifyIcon,
   appleMusic: Music4,

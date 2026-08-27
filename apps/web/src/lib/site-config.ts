@@ -11,6 +11,7 @@ export type SocialPlatform =
   | "youtube"
   | "instagram"
   | "facebook"
+  | "twitter"
   | "tiktok"
   | "spotify"
   | "appleMusic"
@@ -27,12 +28,43 @@ export type SocialLink = {
 };
 
 export const socialLinks: readonly SocialLink[] = [
-  { platform: "youtube", label: "YouTube", url: "", kind: "social" },
-  { platform: "instagram", label: "Instagram", url: "", kind: "social" },
-  { platform: "facebook", label: "Facebook", url: "", kind: "social" },
+  {
+    platform: "youtube",
+    label: "YouTube",
+    url: "https://www.youtube.com/@maxwellau7355",
+    kind: "social",
+  },
+  {
+    platform: "instagram",
+    label: "Instagram",
+    url: "https://www.instagram.com/imaxwellau/",
+    kind: "social",
+  },
+  {
+    platform: "facebook",
+    label: "Facebook",
+    url: "https://www.facebook.com/maxwellaumusic",
+    kind: "social",
+  },
+  {
+    platform: "twitter",
+    label: "X",
+    url: "https://twitter.com/Maxwell_A_U",
+    kind: "social",
+  },
   { platform: "tiktok", label: "TikTok", url: "", kind: "social" },
-  { platform: "spotify", label: "Spotify", url: "", kind: "streaming" },
-  { platform: "appleMusic", label: "Apple Music", url: "", kind: "streaming" },
+  {
+    platform: "spotify",
+    label: "Spotify",
+    url: "https://open.spotify.com/artist/2nuUncmBsgPq5iLFQhnn65",
+    kind: "streaming",
+  },
+  {
+    platform: "appleMusic",
+    label: "Apple Music",
+    url: "https://music.apple.com/us/artist/maxwell-au/776007996",
+    kind: "streaming",
+  },
   { platform: "audiomack", label: "Audiomack", url: "", kind: "streaming" },
   { platform: "boomplay", label: "Boomplay", url: "", kind: "streaming" },
 ] as const;
@@ -73,10 +105,14 @@ export const siteConfig = {
    */
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://maxwellau.com",
   locale: "en_GB",
-  /** TODO: OWNER — replace with the real ministry enquiry addresses. */
+  /**
+   * Source: the public "Booking info" address on the ministry's Instagram
+   * bio (@imaxwellau), read 2026-08-27. No separate press address has been
+   * published, so `press` stays empty until one is.
+   */
   email: {
-    general: "",
-    bookings: "",
+    general: "hissoundmedia@gmail.com",
+    bookings: "hissoundmedia@gmail.com",
     press: "",
   },
   brand: {

@@ -1,10 +1,10 @@
-import { withSamples } from "@/content/content-mode";
-import { sampleVideos } from "@/content/sample/videos";
+import { videos as realVideos } from "@/content/videos";
 import type { Video, VideoCategory } from "@/modules/videos/types";
 
 /**
- * Video read model: CMS-managed rows first (Phase 3), sample records as the
- * fallback while the database is empty or unreachable.
+ * Video read model: CMS-managed rows first (Phase 3), the real YouTube
+ * catalog (`src/content/videos.ts`) as the fallback while the database is
+ * empty or unreachable.
  */
 
 type DbVideo = {
@@ -29,6 +29,7 @@ function mapVideo(row: DbVideo): Video {
     publishedAt: row.publishedAt.toISOString(),
     youtubeId: row.youtubeId,
     posterImageSlug: null,
+    posterUrl: row.youtubeId ? `https://i.ytimg.com/vi/${row.youtubeId}/hqdefault.jpg` : null,
     durationSeconds: row.durationSeconds,
     featured: row.featured,
     isSample: false,
@@ -46,7 +47,7 @@ async function allVideos(): Promise<readonly Video[]> {
   } catch {
     // fall through to sample content
   }
-  return withSamples(sampleVideos);
+  return realVideos;
 }
 
 const byNewest = (a: Video, b: Video) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt);

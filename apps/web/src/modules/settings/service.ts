@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { socialLinks as defaultLinks, type SocialLink } from "@/lib/site-config";
+import { siteConfig, socialLinks as defaultLinks, type SocialLink } from "@/lib/site-config";
 
 /**
  * Site settings stored in the SiteSetting table, validated on read AND write so
@@ -60,7 +60,7 @@ export async function getConfiguredSocialLinks(
 
 export async function getContactEmails(): Promise<ContactEmails> {
   const stored = await readSetting(CONTACT_EMAILS_KEY, contactEmailsSchema);
-  return stored ?? { general: "", bookings: "", press: "" };
+  return stored ?? siteConfig.email;
 }
 
 export async function saveSetting(key: string, value: unknown): Promise<void> {
