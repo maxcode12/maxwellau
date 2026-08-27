@@ -84,6 +84,8 @@ Thumbs.db
 .cache/
 
 # owner-supplied originals (100MB+) — processed into apps/web/public by
-# scripts/prepare-assets.mjs; keep originals out of git
-images/
+# scripts/prepare-assets.mjs; keep originals out of git. Anchored to repo
+# root only — a bare `images/` pattern also matches apps/web/public/images/,
+# which holds the *generated* .webp files that must stay tracked.
+/images/
 .tmp/
