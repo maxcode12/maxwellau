@@ -19,6 +19,17 @@ const serverSchema = z.object({
   AZURE_STORAGE_ACCOUNT: z.string().min(3).optional(),
   AZURE_STORAGE_CONTAINER_MEDIA: z.string().min(1).default("media"),
   AZURE_STORAGE_CONTAINER_PUBLIC: z.string().min(1).default("public-media"),
+  /**
+   * Transactional email over SMTP (Brevo). All four SMTP_* values must be set
+   * together; with none set, email is a logged no-op so local dev and CI need
+   * no provider.
+   */
+  SMTP_HOST: z.string().min(1).optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_USER: z.string().min(1).optional(),
+  SMTP_PASSWORD: z.string().min(1).optional(),
+  /** Verified sender, e.g. `Maxwell AU <no-reply@maxwellau.com>`. */
+  EMAIL_FROM: z.string().min(3).optional(),
 });
 
 const clientSchema = z.object({

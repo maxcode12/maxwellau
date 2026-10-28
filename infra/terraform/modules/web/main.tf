@@ -16,6 +16,18 @@ variable "database_url_secret_name" { type = string }
 variable "storage_account_name" { type = string }
 variable "storage_account_id" { type = string }
 variable "site_url" { type = string }
+variable "smtp_enabled" {
+  type    = bool
+  default = false
+}
+variable "smtp_user" {
+  type    = string
+  default = ""
+}
+variable "email_from" {
+  type    = string
+  default = ""
+}
 variable "acr_id" { type = string }
 variable "acr_login_server" { type = string }
 variable "enable_acr_pull" {
@@ -91,6 +103,17 @@ resource "azurerm_container_app" "web" {
     identity            = "System"
   }
 
+  # Opt-in: the Key Vault secret `smtp-password` must exist first (created by a
+  # human — the SMTP key never passes through Terraform), or revision creation fails.
+  dynamic "secret" {
+    for_each = var.smtp_enabled ? [1] : []
+    content {
+      name                = "smtp-password"
+      key_vault_secret_id = "${trimsuffix(data.azurerm_key_vault.main.vault_uri, "/")}/secrets/smtp-password"
+      identity            = "System"
+    }
+  }
+
   template {
     min_replicas = var.min_replicas
     max_replicas = var.max_replicas
@@ -124,6 +147,25 @@ resource "azurerm_container_app" "web" {
       env {
         name  = "AZURE_STORAGE_ACCOUNT"
         value = var.storage_account_name
+      }
+      dynamic "env" {
+        for_each = var.smtp_enabled ? {
+          SMTP_HOST  = "smtp-relay.brevo.com"
+          SMTP_PORT  = "587"
+          SMTP_USER  = var.smtp_user
+          EMAIL_FROM = var.email_from
+        } : {}
+        content {
+          name  = env.key
+          value = env.value
+        }
+      }
+      dynamic "env" {
+        for_each = var.smtp_enabled ? [1] : []
+        content {
+          name        = "SMTP_PASSWORD"
+          secret_name = "smtp-password"
+        }
       }
 
       liveness_probe {

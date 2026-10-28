@@ -64,6 +64,24 @@ variable "max_replicas" {
   default     = 2
 }
 
+variable "smtp_enabled" {
+  description = "Wire Brevo SMTP into the app. Requires Key Vault secret `smtp-password` to exist first."
+  type        = bool
+  default     = false
+}
+
+variable "smtp_user" {
+  description = "Brevo SMTP login (Settings > SMTP & API). Not a secret."
+  type        = string
+  default     = ""
+}
+
+variable "email_from" {
+  description = "Verified sender address, e.g. 'Maxwell AU <no-reply@maxwellau.com>'."
+  type        = string
+  default     = ""
+}
+
 variable "site_url" {
   description = "Canonical public origin for this environment (e.g. https://maxwellau.com)."
   type        = string

@@ -107,4 +107,7 @@ module "web" {
   acr_id                       = module.core.acr_id
   acr_login_server             = module.core.acr_login_server
   enable_acr_pull              = var.enable_acr_pull
+  smtp_enabled                 = var.smtp_enabled
+  smtp_user                    = var.smtp_user
+  email_from                   = var.email_from
 }
