@@ -14,6 +14,15 @@
 
 All infrastructure is defined in `infra/terraform` (dev/staging/prod tfvars).
 
+### Always-on web replica (recurring cost)
+
+The live site (`maxwellau.com`, served by the `staging` environment) runs with
+`min_replicas = 1`. With `0`, Container Apps scales the app to zero when idle
+and the first visitor after a quiet spell waited ~51 s for a cold start
+(measured 2026-11-09; warm responses are 0.1–0.2 s). One always-on 0.5 vCPU /
+1 GiB replica bills at the lower idle rate between requests — roughly
+$10–15/month, versus $0 idle. Dev environments can stay at `0`.
+
 ## Environment variables
 
 Documented in `.env.example` (names only, never values). In Azure, values come

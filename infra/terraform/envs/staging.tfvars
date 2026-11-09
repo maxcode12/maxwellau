@@ -3,7 +3,12 @@ environment = "staging"
 # separate prod environment yet, see docs/deployment.md.
 site_url         = "https://maxwellau.com"
 web_cors_origins = ["https://maxwellau.com", "https://www.maxwellau.com"]
-min_replicas     = 0
+min_replicas     = 1
 # Container App, image and ACR pull role assignment already exist and have
 # propagated (first live deploy: 2026-08-22) — safe to keep true going forward.
 enable_acr_pull = true
+
+# Brevo SMTP. The key itself lives in Key Vault secret `smtp-password`.
+smtp_enabled = true
+smtp_user    = "b6494f001@smtp-brevo.com"
+email_from   = "Maxwell AU <no-reply@maxwellau.com>"
