@@ -64,10 +64,16 @@ export async function sendEmail(message: EmailMessage): Promise<EmailResult> {
     return { status: "sent" };
   } catch (error) {
     // Log the failure class only — error text can echo addresses or credentials.
+    // SMTP reply code and failing command (e.g. 535 / AUTH) are protocol
+    // metadata, not secrets, and distinguish bad credentials from an
+    // unactivated SMTP account.
+    const err = error as { code?: string; responseCode?: number; command?: string };
     console.error(
       JSON.stringify({
         event: "email.failed",
-        code: (error as { code?: string }).code ?? "UNKNOWN",
+        code: err.code ?? "UNKNOWN",
+        responseCode: err.responseCode,
+        command: err.command,
       }),
     );
     return { status: "failed" };
